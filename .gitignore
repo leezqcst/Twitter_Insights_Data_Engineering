@@ -44,3 +44,10 @@ Temporary Items
 
 # ============
 data-gen/
+prueba*
+
+# IDE files
+.idea
+
+# Generated files
+tweet_output/*
