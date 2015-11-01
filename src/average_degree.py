@@ -24,7 +24,9 @@ def getHashtags(text):
 
 
     #Note: Checked in twitter that at least one space before the hashtag and one after is required to perform a valid hashtag
-    return [word[1:].lower() for word in text.split() if word.startswith('#')]
+    hashtags = [word[1:].lower() for word in text.split() if word.startswith('#')]
+
+    return list(set(hashtags)) #Remove repeated hashtags
 
 
 def computeDegree():
@@ -115,7 +117,7 @@ def computeDegree():
                 #Continue only if we have something to process
                 if len(valid_tweets_df):
                     #TODO por aqui
-                    valid_tweets_df.head()
+
 
 
 
