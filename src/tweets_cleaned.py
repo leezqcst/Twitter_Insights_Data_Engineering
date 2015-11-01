@@ -40,7 +40,7 @@ def removeEscape(cad):
     :param cad:
     :return:
     '''
-    pattern = '[^a-zA-Z0-9 #@:,.*]'
+    pattern = "[^a-zA-Z0-9 #@:,.*/'!?]"
     return re.sub(pattern, '', cad)
 
 
