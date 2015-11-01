@@ -94,26 +94,29 @@ def computeDegree():
                 timestamp = [elem[1][:-2] for elem in splitted]
 
                 #Creating dataframe
-                data = {'text': text, 'timestamp': timestamp }
+                data = {'text': text, 'timestamp': timestamp , 'hashtags': [[] for a in range(0,len(text))] }
                 df = pd.DataFrame(data = data)
 
                 #Converting timestamp column to an appropriate format to work with
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-                #TODO hacerlo aqui, porque sino sería procesar a lo tonto, a lo mejor hay hashtags que vamos a tirar
-                df['hashtags'] = df['text'].apply(getHashtags)
+                #Get tweets within the time window
+                newest_timestamp = max(df['timestamp'])
+                oldest_valid_timestamp = newest_timestamp-pd.DateOffset(seconds=WINDOW_SIZE)
+                windowed_tweets_df = df[ df['timestamp'] >= oldest_valid_timestamp]
+
+                #Extract hashtags
+                windowed_tweets_df['hashtags'] = windowed_tweets_df['text'].apply(getHashtags)
 
                 #We can only use those tweets that have at least 2 hashtags
                 length = lambda x: len(x)
-                valid_tweets_df = df[ df['hashtags'].apply(length) >= 2 ]
+                valid_tweets_df = windowed_tweets_df[ windowed_tweets_df['hashtags'].apply(length) >= 2 ]
 
                 #Continue only if we have something to process
                 if len(valid_tweets_df):
+                    #TODO por aqui
+                    valid_tweets_df.head()
 
-                    #Get tweets within the time window
-                    newest_timestamp = max(valid_tweets_df['timestamp'])
-                    oldest_valid_timestamp = newest_timestamp-pd.DateOffset(seconds=WINDOW_SIZE)
-                    windowed_tweets_df = valid_tweets_df[ valid_tweets_df['timestamp'] >= oldest_valid_timestamp]
 
 
 
@@ -126,9 +129,7 @@ def computeDegree():
                 #Processing output
                 ##################
 
-                #Write cleaned batch
-                for tweet in cleaned_tweets:
-                    f_output.write(tweet + '\n')
+
 
 
 
