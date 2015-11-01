@@ -13,7 +13,7 @@ import re
 import sys
 
 #Parameters
-BATCH_SIZE = 1
+BATCH_SIZE = 100
 
 
 unicode_tweets = 0
@@ -45,10 +45,13 @@ def clean():
 
     global BATCH_SIZE
 
-    path_2_input = sys.argv[1]
-    path_2_output = sys.argv[2]
-
     #Checking the paths given by the user
+    try:
+        path_2_input = sys.argv[1]
+        path_2_output = sys.argv[2]
+    except IndexError:
+        print("The number of parameters given was insufficient. You need to provide at least 2: the input file and the output file")
+
     if not os.path.isfile(path_2_input):
         print("The given input file does not exist\n")
         sys.exit()
@@ -117,6 +120,7 @@ def clean():
         f_output.write("\n%d tweets contained unicode." % unicode_tweets)
 
     print('Full batch processed')
+
 
 
 if __name__ == '__main__':

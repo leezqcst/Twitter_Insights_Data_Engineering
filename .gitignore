@@ -50,4 +50,6 @@ prueba*
 .idea
 
 # Generated files
+*.pyc
 tweet_output/
+ft*.txt
