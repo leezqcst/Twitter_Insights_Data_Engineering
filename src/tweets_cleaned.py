@@ -10,13 +10,14 @@ import json
 import os
 import pandas as pd
 import re
+import sys
+
+#Parameters
+BATCH_SIZE = 1
 
 
-BATCH_SIZE = 10
-PATH_2_INPUT = os.path.join('..', 'data-gen', 'tweets_small.txt')
-PATH_2_OUTPUT = os.path.join('..', 'tweet_output', 'ft1.txt')
-
-
+path_2_input = sys.argv[1]
+path_2_output = sys.argv[2]
 unicode_tweets = 0
 
 #Functions
@@ -49,7 +50,7 @@ def removeEscape(cad):
 
 
 
-if not os.path.isfile(PATH_2_INPUT):
+if not os.path.isfile(path_2_input):
     print("The given file does not exist\n")
     exit()
 
@@ -58,7 +59,7 @@ unprocessed_tweets = []
 end_reached = False
 
 
-with open(PATH_2_INPUT, 'r') as f_input, open(PATH_2_OUTPUT, 'w') as f_output:
+with open(path_2_input, 'r') as f_input, open(path_2_output, 'w') as f_output:
 
     #Processing input
     #################

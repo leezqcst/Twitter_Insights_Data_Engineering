@@ -50,4 +50,4 @@ prueba*
 .idea
 
 # Generated files
-tweet_output/*
+tweet_output/
