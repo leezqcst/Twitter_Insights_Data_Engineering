@@ -49,10 +49,17 @@ def removeEscape(cad):
 
 
 
-
+#Checking the paths given by the user
 if not os.path.isfile(path_2_input):
-    print("The given file does not exist\n")
-    exit()
+    print("The given input file does not exist\n")
+    sys.exit()
+
+try:
+    f = open(path_2_output, 'w')
+    f.close()
+except IOError:
+    print("The given output file does not exist or can't be created\n")
+    sys.exit()
 
 cleaned_tweets = []
 unprocessed_tweets = []
