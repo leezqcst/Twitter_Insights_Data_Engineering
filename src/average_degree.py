@@ -5,14 +5,16 @@ Created on Sat Oct 31 11:08:29 2015
 @author: Ricardo Guerrero
 """
 
+import itertools
 import os
 import pandas as pd
 import sys
 
 #Parameters
-BATCH_SIZE = 3
+BATCH_SIZE = 5
 PATTERN = ' (timestamp: '
-WINDOW_SIZE = 60
+WINDOW_SIZE = 10000 #TODO ajustar a 100
+
 
 def getHashtags(text):
     '''
@@ -29,12 +31,31 @@ def getHashtags(text):
     return list(set(hashtags)) #Remove repeated hashtags
 
 
+def getEdges(listSrc):
+    '''
+
+    :param cad:
+    :return:
+    '''
+
+    aux = []
+
+    for subset in itertools.combinations(listSrc, 2):
+        aux.append(subset)
+
+    listDst = list(set(aux))
+    listDst.sort()
+
+    return listDst
+
+
 def computeDegree():
     '''
 
     :param cad:
     :return:
     '''
+
 
     #Checking the paths given by the user
     try:
@@ -116,17 +137,32 @@ def computeDegree():
 
                 #Continue only if we have something to process
                 if len(valid_tweets_df):
-                    #TODO por aqui
+
+                    #Get nodes
+                    flat_hashtags = [item for sublist in valid_tweets_df['hashtags'] for item in sublist]
+                    nodes = list(set(flat_hashtags))
+                    nodes.sort()
+
+                    #Now we are converting a list of hashtags (nodes) in a list of tuples (edges)
+                    valid_tweets_df.loc[:, 'edges'] = valid_tweets_df['hashtags'].apply(getEdges)
+
+                    #Because the same edges can appear in different tweets, we need to remove repeated edges
+                    flat_edges = [item for sublist in valid_tweets_df['edges'] for item in sublist]
+                    unique_edges = list(set(flat_edges))
+                    unique_edges.sort()
+
+                    #Initialize dictionary of nodes
+                    nodes_degree = {}
+
+                    for elem in nodes:
+                        nodes_degree[elem] = 0
+
+                    for node in nodes:
+                        for s_tuple in unique_edges:
+                            if node in s_tuple:
+                                nodes_degree[node] +=1
 
 
-
-
-
-
-                    ''' util para convertir a lista cuando haya acabado el procesado
-                    cleaned_tweets_ds = df['text'] + ' (timestamp: ' + df['created_at'] + ')'
-                    cleaned_tweets = [x for x in cleaned_tweets_ds]
-                    '''
 
                 #Processing output
                 ##################
