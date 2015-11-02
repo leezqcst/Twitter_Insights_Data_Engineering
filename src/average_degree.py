@@ -69,7 +69,7 @@ def computeDegree():
         sys.exit()
 
     try:
-        f = open(path_2_output, 'w')
+        f = open(path_2_output, 'r')
         f.close()
     except IOError:
         print("The given output file does not exist or can't be created\n")
@@ -82,10 +82,11 @@ def computeDegree():
 
 
 
-    with open(path_2_input, 'r') as f_input, open(path_2_output, 'w') as f_output:
+    with open(path_2_input, 'r') as f_input, open(path_2_output, 'a') as f_output:
 
         #Processing input
         #################
+
         while not end_reached:
 
             del unprocessed_tweets[:]
@@ -157,40 +158,24 @@ def computeDegree():
                     for elem in nodes:
                         nodes_degree[elem] = 0
 
+                    #Compute node's degree
                     for node in nodes:
                         for s_tuple in unique_edges:
                             if node in s_tuple:
                                 nodes_degree[node] +=1
 
+                    average_degree = sum(nodes_degree.values())/float(len(nodes))
+
+        #Processing output
+        ##################
+
+        f_output.write("%.2f" % average_degree)
 
 
-                #Processing output
-                ##################
 
 
 
 
-
-
-    '''
-    interesting_tweets_df = interesting_tweets_df[['hashtags', 'created_at']]
-    '''
-    #Get newest timestamp
-    #Get those tweets in a 60 seconds window
-
-    '''
-    cad = 'Spark Summit East this week! #Spark #Apache (timestamp: Thu Oct 29 17:51:01 +0000 2015)'
-
-
-    a = ['#Spark', '#Hadoop']
-    b = ['#Spark', '#Hadoop', '#spark','#Spark', '#Hadoop', '#spark']
-
-    print getHashtags(a)
-    print getHashtags(b)
-
-    hashtags = getHashtags(cad)
-
-    '''
 
 if __name__ == '__main__':
     computeDegree()
