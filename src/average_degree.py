@@ -11,9 +11,9 @@ import pandas as pd
 import sys
 
 #Parameters
-BATCH_SIZE = 5
+BATCH_SIZE = 2
 PATTERN = ' (timestamp: '
-WINDOW_SIZE = 10000 #TODO ajustar a 100
+WINDOW_SIZE = 1000000 #TODO ajustar a 60
 
 
 def getHashtags(text):
@@ -56,6 +56,7 @@ def computeDegree():
     :return:
     '''
 
+    #TODO aquí habrá que iniciar el hilo que nos avisa de los 60 s
 
     #Checking the paths given by the user
     try:
@@ -69,17 +70,18 @@ def computeDegree():
         sys.exit()
 
     try:
-        f = open(path_2_output, 'r')
+        f = open(path_2_output, 'a')
         f.close()
     except IOError:
         print("The given output file does not exist or can't be created\n")
         sys.exit()
 
-    #TODO aquí habrá que iniciar el hilo que nos avisa de los 60 s
     cleaned_tweets = []
     unprocessed_tweets = []
     end_reached = False
-
+    average_degree = 0
+    full_nodes = []
+    full_edges = []
 
 
     with open(path_2_input, 'r') as f_input, open(path_2_output, 'a') as f_output:
@@ -100,10 +102,7 @@ def computeDegree():
 
                 aux = f_input.readline()
 
-                #TODO tenemos que eliminar la ultima linea, la del
-                # X tweets contained unicode.
-
-                if not aux:
+                if not aux or aux == '\n':
                     end_reached = True
                 else:
                     unprocessed_tweets.append(aux)
@@ -141,38 +140,53 @@ def computeDegree():
 
                     #Get nodes
                     flat_hashtags = [item for sublist in valid_tweets_df['hashtags'] for item in sublist]
-                    nodes = list(set(flat_hashtags))
-                    nodes.sort()
+                    nodes = list(set(flat_hashtags)) #Remove repeated elements
+
+                    full_nodes += nodes
 
                     #Now we are converting a list of hashtags (nodes) in a list of tuples (edges)
                     valid_tweets_df.loc[:, 'edges'] = valid_tweets_df['hashtags'].apply(getEdges)
 
                     #Because the same edges can appear in different tweets, we need to remove repeated edges
                     flat_edges = [item for sublist in valid_tweets_df['edges'] for item in sublist]
-                    unique_edges = list(set(flat_edges))
-                    unique_edges.sort()
+                    unique_edges = list(set(flat_edges)) #Remove repeated elements
 
-                    #Initialize dictionary of nodes
-                    nodes_degree = {}
 
-                    for elem in nodes:
-                        nodes_degree[elem] = 0
+                    full_edges += unique_edges
 
-                    #Compute node's degree
-                    for node in nodes:
-                        for s_tuple in unique_edges:
-                            if node in s_tuple:
-                                nodes_degree[node] +=1
+        #Readed the whole file
 
-                    average_degree = sum(nodes_degree.values())/float(len(nodes))
+        full_nodes = list(set(full_nodes)) #Remove repeated elements
+        full_nodes.sort()
+
+        full_edges = list(set(full_edges)) #Remove repeated elements
+        full_edges.sort()
+
+        #Initialize dictionary of nodes
+        nodes_degree = {}
+
+        for elem in full_nodes:
+            nodes_degree[elem] = 0
+
+        #Compute node's degree
+        for node in full_nodes:
+            for s_tuple in full_edges:
+                if node in s_tuple:
+                    nodes_degree[node] +=1
+
+
+        if len(full_nodes):
+            average_degree = sum(nodes_degree.values())/float(len(full_nodes))
+        else:
+            average_degree = 0
 
         #Processing output
         ##################
 
-        f_output.write("%.2f" % average_degree)
+        f_output.write("%.2f\n" % average_degree)
 
 
-
+print('yataaaa')
 
 
 
