@@ -17,7 +17,7 @@ import tweets_cleaned as tw_cl
 
 BATCH_SIZE = 2
 PATTERN = ' (timestamp: '
-WINDOW_SIZE = 1000000 #TODO ajustar a 60
+WINDOW_SIZE = 60
 TIME_TRESHOLD = 55
 
 
@@ -139,36 +139,58 @@ def computeDegree():
                 #Converting timestamp column to an appropriate format to work with
                 df['timestamp'] = pd.to_datetime(df['timestamp'])
 
-                #Get tweets within the time window
-                newest_timestamp = max(df['timestamp'])
-                oldest_valid_timestamp = newest_timestamp-pd.DateOffset(seconds=WINDOW_SIZE)
-                windowed_tweets_df = df[ df['timestamp'] >= oldest_valid_timestamp]
+                for index, newest_tweet in df.iterrows():
 
-                #Extract hashtags
-                windowed_tweets_df['hashtags'] = windowed_tweets_df['text'].apply(getHashtags)
+                    #Get tweets within the time window
+                    newest_timestamp = newest_tweet['timestamp']
+                    oldest_valid_timestamp = newest_timestamp-pd.DateOffset(seconds=WINDOW_SIZE)
+                    windowed_tweets_df = df[ df['timestamp'] >= oldest_valid_timestamp]
 
-                #We can only use those tweets that have at least 2 hashtags
-                length = lambda x: len(x)
-                valid_tweets_df = windowed_tweets_df[ windowed_tweets_df['hashtags'].apply(length) >= 2 ]
+                    #Extract hashtags
+                    windowed_tweets_df['hashtags'] = windowed_tweets_df['text'].apply(getHashtags)
 
-                #Continue only if we have something to process
-                if len(valid_tweets_df):
+                    #We can only use those tweets that have at least 2 hashtags
+                    length = lambda x: len(x)
+                    valid_tweets_df = windowed_tweets_df[ windowed_tweets_df['hashtags'].apply(length) >= 2 ]
 
-                    #Get nodes
-                    flat_hashtags = [item for sublist in valid_tweets_df['hashtags'] for item in sublist]
-                    nodes = list(set(flat_hashtags)) #Remove repeated elements
+                    #Continue only if we have something to process
+                    if len(valid_tweets_df):
 
-                    full_nodes += nodes
+                        #Get nodes
+                        flat_hashtags = [item for sublist in valid_tweets_df['hashtags'] for item in sublist]
+                        nodes = list(set(flat_hashtags)) #Remove repeated elements
+                        nodes.sort()
 
-                    #Now we are converting a list of hashtags (nodes) in a list of tuples (edges)
-                    valid_tweets_df.loc[:, 'edges'] = valid_tweets_df['hashtags'].apply(getEdges)
+                        #Now we are converting a list of hashtags (nodes) in a list of tuples (edges)
+                        valid_tweets_df.loc[:, 'edges'] = valid_tweets_df['hashtags'].apply(getEdges)
 
-                    #Because the same edges can appear in different tweets, we need to remove repeated edges
-                    flat_edges = [item for sublist in valid_tweets_df['edges'] for item in sublist]
-                    unique_edges = list(set(flat_edges)) #Remove repeated elements
+                        #Because the same edges can appear in different tweets, we need to remove repeated edges
+                        flat_edges = [item for sublist in valid_tweets_df['edges'] for item in sublist]
+                        unique_edges = list(set(flat_edges)) #Remove repeated elements
+                        unique_edges.sort()
+
+                        #Initialize dictionary of nodes
+                        nodes_degree = {}
+
+                        for elem in nodes:
+                            nodes_degree[elem] = 0
+
+                        #Compute node's degree
+                        for node in nodes:
+                            for s_tuple in unique_edges:
+                                if node in s_tuple:
+                                    nodes_degree[node] +=1
+
+                        average_degree = sum(nodes_degree.values())/float(len(nodes))
+
+                    else:
+                        average_degree = 0
 
 
-                    full_edges += unique_edges
+                    #Processing output
+                    ##################
+
+                    f_output.write("%.2f\n" % average_degree)
 
 
             #Are we entering the red zone?
@@ -179,36 +201,8 @@ def computeDegree():
                 #Ignore the rest of the tweets and left some margin to process already read tweets
                 end_reached = True
 
-        #Readed the whole file
-
-        full_nodes = list(set(full_nodes)) #Remove repeated elements
-        full_nodes.sort()
-
-        full_edges = list(set(full_edges)) #Remove repeated elements
-        full_edges.sort()
-
-        #Initialize dictionary of nodes
-        nodes_degree = {}
-
-        for elem in full_nodes:
-            nodes_degree[elem] = 0
-
-        #Compute node's degree
-        for node in full_nodes:
-            for s_tuple in full_edges:
-                if node in s_tuple:
-                    nodes_degree[node] +=1
 
 
-        if len(full_nodes):
-            average_degree = sum(nodes_degree.values())/float(len(full_nodes))
-        else:
-            average_degree = 0
-
-        #Processing output
-        ##################
-
-        f_output.write("%.2f\n" % average_degree)
 
 
 
