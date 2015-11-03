@@ -6,6 +6,7 @@ Created on Sat Oct 31 11:08:29 2015
 """
 
 
+import itertools
 import json
 import os
 import pandas as pd
@@ -34,23 +35,47 @@ def removeUnicode(cad):
 
 def removeEscape(cad):
     '''
+    This function will replace each scape character and multiple whitespaces the following way:
+
+        \/ -> /
+        \\ -> \
+        \' -> '
+        \” -> “
+        \n -> space
+        \t -> space
+
+        Also, all whitespace escape characters should be replaced with a single space.
+
+    As it is stated in the FAQ of the challenge
 
     :param cad:
     :return:
     '''
-    pattern = "[^a-zA-Z0-9 #@:,.*/'!?]"
-    return re.sub(pattern, '', cad)
 
-def clean():
+    patterns = [r"\\/", r"\'", r'\"', "\n", "\t", r"  +"]
+    replacements = [r"/" , r"'", r'"', r" ", r" ", r" "]
+    #TODO remove the second escape character
+
+    for pat, rep in itertools.izip(patterns, replacements):
+        re.sub(pat, rep, cad)
+
+    return cad
+
+def clean(inp = None, outp = None):
 
     global BATCH_SIZE
 
     #Checking the paths given by the user
-    try:
-        path_2_input = sys.argv[1]
-        path_2_output = sys.argv[2]
-    except IndexError:
-        print("The number of parameters given was insufficient. You need to provide at least 2: the input file and the output file")
+
+    if inp and outp:
+        path_2_input = inp
+        path_2_output = outp
+    else:
+        try:
+            path_2_input = sys.argv[1]
+            path_2_output = sys.argv[2]
+        except IndexError:
+            print("The number of parameters given was insufficient. You need to provide at least 2: the input file and the output file")
 
     if not os.path.isfile(path_2_input):
         print("The given input file does not exist\n")
