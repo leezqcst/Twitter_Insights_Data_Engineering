@@ -9,11 +9,16 @@ import itertools
 import os
 import pandas as pd
 import sys
+import tempfile
+import time
+import tweets_cleaned as tw_cl
 
 #Parameters
+
 BATCH_SIZE = 2
 PATTERN = ' (timestamp: '
 WINDOW_SIZE = 1000000 #TODO ajustar a 60
+TIME_TRESHOLD = 55
 
 
 def getHashtags(text):
@@ -56,7 +61,10 @@ def computeDegree():
     :return:
     '''
 
-    #TODO aquí habrá que iniciar el hilo que nos avisa de los 60 s
+    #As we cannot spend more than 60 seconds processing tweets that will arrive every 60 seconds,
+    #we need to take care of the time consumed.
+    starting_time = time.time()
+
 
     #Checking the paths given by the user
     try:
@@ -76,6 +84,14 @@ def computeDegree():
         print("The given output file does not exist or can't be created\n")
         sys.exit()
 
+    #Cleaning input tweets
+    '''
+    temporal_file = tempfile.NamedTemporaryFile(mode='w', delete=False)
+    temporal_file.close()
+    tw_cl.clean(path_2_input, temporal_file.name)
+
+    path_2_input = temporal_file.name
+    '''
     cleaned_tweets = []
     unprocessed_tweets = []
     end_reached = False
@@ -154,6 +170,15 @@ def computeDegree():
 
                     full_edges += unique_edges
 
+
+            #Are we entering the red zone?
+
+            current_time = time.time()
+            if current_time - starting_time > TIME_TRESHOLD:
+
+                #Ignore the rest of the tweets and left some margin to process already read tweets
+                end_reached = True
+
         #Readed the whole file
 
         full_nodes = list(set(full_nodes)) #Remove repeated elements
@@ -185,8 +210,6 @@ def computeDegree():
 
         f_output.write("%.2f\n" % average_degree)
 
-
-print('yataaaa')
 
 
 
