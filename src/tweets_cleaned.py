@@ -13,9 +13,6 @@ import pandas as pd
 import re
 import sys
 
-#Parameters
-BATCH_SIZE = 100
-
 
 unicode_tweets = 0
 
@@ -61,92 +58,112 @@ def removeEscape(cad):
 
     return cad
 
-def clean(inp = None, outp = None):
+def process_tweets(unprocessed_tweets):
+    '''
+    # Clean a batch
+    '''
 
-    global BATCH_SIZE
 
-    #Checking the paths given by the user
+    df = pd.DataFrame(json.loads(line) for line in unprocessed_tweets)
 
-    if inp and outp:
-        path_2_input = inp
-        path_2_output = outp
-    else:
+    # Remove unwanted data
+    df = df[['text', 'created_at']]
+
+    # Remove unicode characters
+    df['text'] = df['text'].apply(removeUnicode)
+
+    # Replace escape characters
+    df['text'] = df['text'].apply(removeEscape)
+
+    return df
+
+
+def clean(tweet_batch = None, batch_size = 100):
+
+
+    standalone_mode = True if tweet_batch is None else False
+
+
+    if standalone_mode:
+
+
+        # Checking the parameters given by the user
+
         try:
             path_2_input = sys.argv[1]
             path_2_output = sys.argv[2]
         except IndexError:
             print("The number of parameters given was insufficient. You need to provide at least 2: the input file and the output file")
 
-    if not os.path.isfile(path_2_input):
-        print("The given input file does not exist\n")
-        sys.exit()
+        #Exists those files?
 
-    try:
-        f = open(path_2_output, 'w')
-        f.close()
-    except IOError:
-        print("The given output file does not exist or can't be created\n")
-        sys.exit()
+        if not os.path.isfile(path_2_input):
+            print("The given input file does not exist\n")
+            sys.exit()
 
-    cleaned_tweets = []
-    unprocessed_tweets = []
-    end_reached = False
+        try:
+            f = open(path_2_output, 'w')
+            f.close()
+        except IOError:
+            print("The given output file does not exist or can't be created\n")
+            sys.exit()
 
 
-    with open(path_2_input, 'r') as f_input, open(path_2_output, 'w') as f_output:
 
-        #Processing input
-        #################
-        while not end_reached:
+        cleaned_tweets = []
+        unprocessed_tweets = []
+        end_reached = False
 
-            del unprocessed_tweets[:]
-            del cleaned_tweets[:]
+        with open(path_2_input, 'r') as f_input, open(path_2_output, 'w') as f_output:
 
-            #Read a batch
+            #Processing input
+            #################
 
-            ind = 0
+            while not end_reached:
 
-            while (not end_reached) and (ind < BATCH_SIZE):
+                del unprocessed_tweets[:]
+                del cleaned_tweets[:]
 
-                aux = f_input.readline()
+                # Read a batch
+                ind = 0
 
-                if not aux:
-                    end_reached = True
-                else:
-                    unprocessed_tweets.append(aux)
-                    ind += 1
+                while (not end_reached) and (ind < batch_size):
 
-            if len(unprocessed_tweets):
-                #Clean a batch
+                    aux = f_input.readline()
 
-                df = pd.DataFrame(json.loads(line) for line in unprocessed_tweets)
+                    if not aux:
+                        end_reached = True
+                    else:
+                        unprocessed_tweets.append(aux)
+                        ind += 1
 
-                #Remove unwanted columns
-                df = df[['text', 'created_at']]
-
-                #Remove unicode characters
-                df['text'] = df['text'].apply(removeUnicode)
-
-                #Remove escape characters
-                df['text'] = df['text'].apply(removeEscape)
-
-                cleaned_tweets_ds = df['text'] + ' (timestamp: ' + df['created_at'] + ')'
-                cleaned_tweets = [x for x in cleaned_tweets_ds]
+                # Process a batch
+                if len(unprocessed_tweets):
+                    df = process_tweets(unprocessed_tweets)
 
 
-                #Processing output
-                ##################
+                    #Processing output
+                    ##################
 
-                #Write cleaned batch
-                for tweet in cleaned_tweets:
-                    f_output.write(tweet + '\n')
+                    # Apply output format
+                    cleaned_tweets_ds = df['text'] + ' (timestamp: ' + df['created_at'] + ')'
+                    cleaned_tweets = [x for x in cleaned_tweets_ds]
 
-        #Add summary
-        f_output.write("\n%d tweets contained unicode." % unicode_tweets)
+                    # Write cleaned batch
+                    for tweet in cleaned_tweets:
+                        f_output.write(tweet + '\n')
 
-    print('Full batch processed')
+            # Add summary
+            f_output.write("\n%d tweets contained unicode." % unicode_tweets)
+
+        print('Full batch processed')
+
+    else:
+        return process_tweets(tweet_batch)
 
 
 
 if __name__ == '__main__':
     clean()
+
+
