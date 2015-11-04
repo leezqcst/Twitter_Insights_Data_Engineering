@@ -2,9 +2,8 @@
 """
 Created on Sat Oct 31 11:08:29 2015
 
-@author: Ricardo Guerrero
+@author: Ricardo Guerrero Gómez-Olmedo
 """
-
 
 import itertools
 import json
@@ -14,24 +13,42 @@ import re
 import sys
 
 
+# Global variable
 unicode_tweets = 0
 
-#Functions
-def removeUnicode(cad):
-    '''
 
-    '''
+def removeUnicode(cad):
+    """
+    This function take cares of removing unwanted unicode characters.
+    It does not replace them but just remove.
+
+    If cad has any unicode character, unicode_tweets will be incremented
+    (once per string, not per character).
+
+    Parameters
+    ----------
+    cad : string
+        Input string with potentially unwanted unicode characters.
+
+    Returns
+    -------
+    ascii_cad : string
+        Same as cad but with only allowed ascii characters
+    """
+
+
     global unicode_tweets
 
-    ascii_cad = cad.encode('ascii','ignore')
+    ascii_cad = cad.encode('ascii', 'ignore')
 
     if ascii_cad != cad:
         unicode_tweets += 1
 
     return ascii_cad
 
-def removeEscape(cad):
-    '''
+
+def replaceEscape(cad):
+    """
     This function will replace each scape character and multiple whitespaces the following way:
 
         \/ -> /
@@ -43,25 +60,49 @@ def removeEscape(cad):
 
         Also, all whitespace escape characters should be replaced with a single space.
 
-    As it is stated in the FAQ of the challenge
+    as it is stated in the FAQ of the challenge.
 
-    :param cad:
-    :return:
-    '''
+    Parameters
+    ----------
+    cad : string
+        Input string ascii-encoded with potentially unwanted escape characters.
+
+    Returns
+    -------
+    cad : string
+        Same as cad but without any possible escape characters.
+    """
+
 
     patterns = [r"\\/", r"\'", r'\"', "\n", "\t", r"  +"]
-    replacements = [r"/" , r"'", r'"', r" ", r" ", r" "]
-    #TODO remove the second escape character
+    replacements = [r"/", r"'", r'"', r" ", r" ", r" "]
+    # TODO remove the second escape character
 
     for pat, rep in itertools.izip(patterns, replacements):
         re.sub(pat, rep, cad)
 
     return cad
 
-def process_tweets(unprocessed_tweets):
-    '''
-    # Clean a batch
-    '''
+
+def format_json_tweets(unprocessed_tweets):
+    """
+    This function accepts a list of json-formatted tweets.
+    It stores them as a Pandas' DataFrame preserving only the content of the tweet, i.e. the text,
+    and it's time of creation.
+    It will apply a cleanup to the text in order to remove potentially harmful characters, such as
+    unicode characters or escape characters.
+
+    Parameters
+    ----------
+    unprocessed_tweets : list
+        It is a list of json-formatted tweets with many data such as text, created_at, geo, is_translator
+        Each line contains one tweet.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        df is a DataFrame that contains the content and timestamp of each tweet.
+    """
 
 
     df = pd.DataFrame(json.loads(line) for line in unprocessed_tweets)
@@ -73,19 +114,49 @@ def process_tweets(unprocessed_tweets):
     df['text'] = df['text'].apply(removeUnicode)
 
     # Replace escape characters
-    df['text'] = df['text'].apply(removeEscape)
+    df['text'] = df['text'].apply(replaceEscape)
 
     return df
 
 
-def clean(tweet_batch = None, batch_size = 100):
+def clean(tweet_batch=None, batch_size=100):
+    """
+    This function process a list of json-formatted tweet converting them to a Pandas' DataFrame
+    and removing potentially harmful characters.
+    It has two modes of operation:
+        -In standalone mode: accepts as a parameter a list of tweets to process and will return
+        a DataFrame with the results. This mode is used when clean is called from an external function.
+        -In non standalone mode: it uses command-line parameter as input file (argv[1]) and output
+        file (argv[2]). This way the tweets are read from a file, processed and written to another
+        file. It's important that the input file is not the same as the output file.
+
+    Parameters
+    ----------
+    tweet_batch : list
+        tweet_batch could be a list of json-formatted tweets, which in this case the standalone
+        mode will be used or None, where the standalone mode will be false.
+
+    batch_size: int
+        When called in standalone mode, this variable represents the maximum amount of tweets
+        that will be processed in one go. This parameter ease the scalability of the algorithm
+        as it can trade-off between speed and RAM memory. Using a low value makes this code
+        usable in low-RAM machines, as it will not load all tweets at the same time. Using an
+        enough high value makes that all tweets can be loaded in one go speeding up the
+        algorithm.
+        In non standalone mode, this parameter will be ignored.
+
+    Returns
+    -------
+    df : pandas.DataFrame
+        df is a DataFrame that contains the content and timestamp of each tweet.
+
+    Note: it returns df only in non standalone mode, i.e. when clean is called by another function.
+    """
 
 
     standalone_mode = True if tweet_batch is None else False
 
-
     if standalone_mode:
-
 
         # Checking the parameters given by the user
 
@@ -95,7 +166,7 @@ def clean(tweet_batch = None, batch_size = 100):
         except IndexError:
             print("The number of parameters given was insufficient. You need to provide at least 2: the input file and the output file")
 
-        #Exists those files?
+        # Exists those files?
 
         if not os.path.isfile(path_2_input):
             print("The given input file does not exist\n")
@@ -108,15 +179,13 @@ def clean(tweet_batch = None, batch_size = 100):
             print("The given output file does not exist or can't be created\n")
             sys.exit()
 
-
-
         cleaned_tweets = []
         unprocessed_tweets = []
         end_reached = False
 
         with open(path_2_input, 'r') as f_input, open(path_2_output, 'w') as f_output:
 
-            #Processing input
+            # Processing input
             #################
 
             while not end_reached:
@@ -139,10 +208,10 @@ def clean(tweet_batch = None, batch_size = 100):
 
                 # Process a batch
                 if len(unprocessed_tweets):
-                    df = process_tweets(unprocessed_tweets)
+                    df = format_json_tweets(unprocessed_tweets)
 
 
-                    #Processing output
+                    # Processing output
                     ##################
 
                     # Apply output format
@@ -159,11 +228,8 @@ def clean(tweet_batch = None, batch_size = 100):
         print('Full batch processed')
 
     else:
-        return process_tweets(tweet_batch)
-
+        return format_json_tweets(tweet_batch)
 
 
 if __name__ == '__main__':
     clean()
-
-
