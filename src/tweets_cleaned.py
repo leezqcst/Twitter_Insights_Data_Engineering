@@ -131,17 +131,19 @@ def clean(tweet_batch=None, batch_size=100):
     Parameters
     ----------
     tweet_batch : list
-        tweet_batch could be a list of json-formatted tweets, which in this case the standalone
-        mode will be used or None, where the standalone mode will be false.
+         tweet_batch could be a list of json-formatted tweets or `None`. In the former case, the standalone
+         mode will be used. In the latter the standalone mode will be disabled.
+         Default value: None
 
     batch_size: int
         When called in standalone mode, this variable represents the maximum amount of tweets
         that will be processed in one go. This parameter ease the scalability of the algorithm
         as it can trade-off between speed and RAM memory. Using a low value makes this code
         usable in low-RAM machines, as it will not load all tweets at the same time. Using an
-        enough high value makes that all tweets can be loaded in one go speeding up the
+        enough high value makes that all tweets can be loaded in one go, speeding up the
         algorithm.
         In non standalone mode, this parameter will be ignored.
+        Default value: 100
 
     Returns
     -------

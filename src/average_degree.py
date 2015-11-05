@@ -13,26 +13,44 @@ import tweets_cleaned as tw_cl
 
 
 def getHashtags(text):
-    '''
-    Get all the hashtags in a string
+    """
+    getHashtags is meant to process input strings that contains a tweet and return a list of valid hashtags.
+    If there is more than one instance of the same tweet, it will be counted only one.
+    This function is case insensitive. It means that if we have the following tweet:
+        #Hadoop #Spark, #spark, and #SPARK
+    it will be returned
+        [hadoop, spark]
 
-    :param cad:
-    :return: a list of hashtags (# is removed)
-    '''
+    Note: a valid hashtag (as checked in Twitter) must have at least one space before and one space after to be
+    considered a valid hashtag
 
+    Parameters
+    ----------
+    text : string
+        text is a string that contains a tweet (typically with hashtags, mentions, etc)
+    """
 
-    # Note: Checked in twitter that at least one space before the hashtag and one after is required to perform a valid hashtag
     hashtags = [word[1:].lower() for word in text.split() if word.startswith('#')]
 
     return list(set(hashtags)) # Remove repeated hashtags
 
 
 def getEdges(listSrc):
-    '''
+    """
+    This function gets a list of hashtags (strings) and compute all possible combinations.
+    This way, thinking of each hashtag as a vertex in a graph, we can compute all the connections
+    between them.
 
-    :param cad:
-    :return:
-    '''
+    Parameters
+    ----------
+    listSrc : list
+        This is a list of strings. Each string contains a hashtag.
+
+    Returns
+    -------
+    listDst : list
+        This is a list of tuples with length two, where each tuple represents and edge in the graph.
+    """
 
     aux = []
 
@@ -46,11 +64,24 @@ def getEdges(listSrc):
 
 
 def computeDegree(batch_size=100):
-    '''
+    """
+    It computes the average degree of a vertex in a Twitter hashtag graph in a temporal window that covers
+    the last 60 seconds.
+    A Twitter hashtag graph is a graph connecting all the hashtags that have been mentioned together in a single tweet.
+    This function will get the input values from a file given in argv[1] and will write the output to the file
+    specified in argv[2] (command-line parameters).
+    The purpose of this function is to obtain a feature that will give us relevant insights about the relationships
+    of each hashtag.
 
-    :param cad:
-    :return:
-    '''
+    Parameters
+    ----------
+    batch_size : int
+        This variable represents the maximum amount of tweets that will be processed in one go. This parameter
+        ease the scalability of the algorithm as it can trade-off between speed and RAM memory. Using a low value
+        makes this code usable in low-RAM machines, as it will not load all tweets at the same time. Using an
+        enough high value makes that all tweets can be loaded in one go, speeding up the algorithm.
+        Default value: 100
+    """
 
 
     # Checking the paths given by the user
