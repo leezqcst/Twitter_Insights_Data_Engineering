@@ -2,7 +2,7 @@
 """
 Created on Sat Oct 31 11:08:29 2015
 
-@author: Ricardo Guerrero
+@author: Ricardo Guerrero Gómez-Olmedo
 """
 
 import itertools
@@ -28,11 +28,25 @@ def getHashtags(text):
     ----------
     text : string
         text is a string that contains a tweet (typically with hashtags, mentions, etc)
+
+    Returns
+    -------
+    anonymous variable : list
+        This variable is a list of unique hashtags (# is removed) found in `text`
     """
 
     hashtags = [word[1:].lower() for word in text.split() if word.startswith('#')]
 
-    return list(set(hashtags)) # Remove repeated hashtags
+    # Remove any harmful element that was left behind
+    hashtags2 = []
+
+    for elem in hashtags:
+        aux = elem[elem.rfind("#")+1 :]
+
+        if aux:
+            hashtags2.append(aux)
+
+    return list(set(hashtags2)) # Remove repeated hashtags
 
 
 def getEdges(listSrc):
@@ -107,9 +121,6 @@ def computeDegree(batch_size=100):
     cleaned_tweets = []
     unprocessed_tweets = []
     end_reached = False
-    average_degree = 0
-    full_nodes = []
-    full_edges = []
     old_batch = pd.DataFrame()
     window_size = 60
 
@@ -180,6 +191,7 @@ def computeDegree(batch_size=100):
                             # Converting a list of hashtags (nodes) in a list of tuples (edges)
                             valid_tweets_df['edges'][begin:] = valid_tweets_df['hashtags'][begin:].apply(getEdges)
 
+
                             # Because the same edges can appear in different tweets, we need to remove repeated edges
                             flat_edges = [item for sublist in valid_tweets_df['edges'] for item in sublist]
                             unique_edges = list(set(flat_edges)) # Remove repeated elements
@@ -195,7 +207,7 @@ def computeDegree(batch_size=100):
                             for node in nodes:
                                 for s_tuple in unique_edges:
                                     if node in s_tuple:
-                                        nodes_degree[node] +=1
+                                        nodes_degree[node] += 1
 
                             average_degree = sum(nodes_degree.values())/float(len(nodes))
 
