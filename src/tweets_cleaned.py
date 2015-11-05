@@ -78,7 +78,7 @@ def replaceEscape(cad):
         cad = cad.replace(elem[0], elem[1])
 
     # Removing multiple whitespaces
-    re.sub(r"  +", " ", cad)
+    cad = re.sub(r"  +", " ", cad)
 
     return cad
 
