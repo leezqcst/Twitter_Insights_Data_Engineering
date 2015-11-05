@@ -152,77 +152,78 @@ def computeDegree(batch_size=100):
                 # Pre-process input tweets so we have them cleaned and organized in a Pandas' DataFrame
                 cleaned_df = tw_cl.clean(unprocessed_tweets)
 
-                # Creating DataFrame
-                empty_l2 = [[] for a in range(0,len(cleaned_df))]
-                data = {'hashtags': empty_l2, 'edges': empty_l2}
-                df = pd.DataFrame(data=data)
-                df['text'] = cleaned_df['text']
-                df['timestamp'] = pd.to_datetime(cleaned_df['created_at'])
+                if len(cleaned_df):
+
+                    # Creating DataFrame
+                    empty_l2 = [[] for a in range(0,len(cleaned_df))]
+                    data = {'hashtags': empty_l2, 'edges': empty_l2}
+                    df = pd.DataFrame(data=data)
+                    df['text'] = cleaned_df['text']
+                    df['timestamp'] = pd.to_datetime(cleaned_df['created_at'])
 
 
-                # Concatenate relevant rows of the previous batch
-                df = pd.concat([old_batch, df], ignore_index=True)
-                begin = len(old_batch)
+                    # Concatenate relevant rows of the previous batch
+                    df = pd.concat([old_batch, df], ignore_index=True)
+                    begin = len(old_batch)
 
-                for index, newest_tweet in df.iterrows():
+                    for index, newest_tweet in df.iterrows():
 
-                    if index >= begin:
+                        if index >= begin:
 
-                        # Get tweets within the time window
-                        newest_timestamp = newest_tweet['timestamp']
-                        oldest_valid_timestamp = newest_timestamp-pd.DateOffset(seconds=window_size)
-                        windowed_tweets_df = df[ (df['timestamp'] >= oldest_valid_timestamp)  &  (df.index <= index) ]
+                            # Get tweets within the time window
+                            newest_timestamp = newest_tweet['timestamp']
+                            oldest_valid_timestamp = newest_timestamp-pd.DateOffset(seconds=window_size)
+                            windowed_tweets_df = df[ (df['timestamp'] >= oldest_valid_timestamp)  &  (df.index <= index) ]
 
-                        # Extract hashtags
-                        windowed_tweets_df['hashtags'][begin:] = windowed_tweets_df['text'][begin:].apply(getHashtags)
+                            # Extract hashtags
+                            windowed_tweets_df['hashtags'] = windowed_tweets_df['text'].apply(getHashtags)
 
-                        # We can only use those tweets that have at least 2 hashtags
-                        length = lambda x: len(x)
-                        valid_tweets_df = windowed_tweets_df[ windowed_tweets_df['hashtags'].apply(length) >= 2 ]
+                            # We can only use those tweets that have at least 2 hashtags
+                            length = lambda x: len(x)
+                            valid_tweets_df = windowed_tweets_df[ windowed_tweets_df['hashtags'].apply(length) >= 2 ]
 
-                        # Continue only if we have something to process
-                        if len(valid_tweets_df):
+                            # Continue only if we have something to process
+                            if len(valid_tweets_df):
 
-                            # Get nodes
-                            flat_hashtags = [item for sublist in valid_tweets_df['hashtags'] for item in sublist]
-                            nodes = list(set(flat_hashtags)) # Remove repeated elements
-                            nodes.sort()
+                                # Get nodes
+                                flat_hashtags = [item for sublist in valid_tweets_df['hashtags'] for item in sublist]
+                                nodes = list(set(flat_hashtags)) # Remove repeated elements
+                                nodes.sort()
 
-                            # Converting a list of hashtags (nodes) in a list of tuples (edges)
-                            valid_tweets_df['edges'][begin:] = valid_tweets_df['hashtags'][begin:].apply(getEdges)
+                                # Converting a list of hashtags (nodes) in a list of tuples (edges)
+                                valid_tweets_df['edges'] = valid_tweets_df['hashtags'].apply(getEdges)
+
+                                # Because the same edges can appear in different tweets, we need to remove repeated edges
+                                flat_edges = [item for sublist in valid_tweets_df['edges'] for item in sublist]
+                                unique_edges = list(set(flat_edges)) # Remove repeated elements
+                                unique_edges.sort()
+
+                                # Initialize dictionary of nodes
+                                nodes_degree = {}
+
+                                for elem in nodes:
+                                    nodes_degree[elem] = 0
+
+                                # Compute node's degree
+                                for node in nodes:
+                                    for s_tuple in unique_edges:
+                                        if node in s_tuple:
+                                            nodes_degree[node] += 1
+
+                                average_degree = sum(nodes_degree.values())/float(len(nodes))
+
+                            else:
+                                average_degree = 0
 
 
-                            # Because the same edges can appear in different tweets, we need to remove repeated edges
-                            flat_edges = [item for sublist in valid_tweets_df['edges'] for item in sublist]
-                            unique_edges = list(set(flat_edges)) # Remove repeated elements
-                            unique_edges.sort()
+                            #Processing output
+                            ##################
 
-                            # Initialize dictionary of nodes
-                            nodes_degree = {}
+                            f_output.write("%.2f\n" % average_degree)
 
-                            for elem in nodes:
-                                nodes_degree[elem] = 0
-
-                            # Compute node's degree
-                            for node in nodes:
-                                for s_tuple in unique_edges:
-                                    if node in s_tuple:
-                                        nodes_degree[node] += 1
-
-                            average_degree = sum(nodes_degree.values())/float(len(nodes))
-
-                        else:
-                            average_degree = 0
-
-
-                        #Processing output
-                        ##################
-
-                        f_output.write("%.2f\n" % average_degree)
-
-                # When processing the first tweets of the new batch, we need to take into
-                # account some relevant tweets of the previous batch
-                old_batch = valid_tweets_df.copy()
+                    # When processing the first tweets of the new batch, we need to take into
+                    # account some relevant tweets of the previous batch
+                    old_batch = valid_tweets_df.copy()
 
 
         print('Full batch processed')
