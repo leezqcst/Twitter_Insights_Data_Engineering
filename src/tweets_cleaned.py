@@ -36,7 +36,6 @@ def removeUnicode(cad):
         Same as cad but with only allowed ascii characters
     """
 
-
     global unicode_tweets
 
     ascii_cad = cad.encode('ascii', 'ignore')
@@ -73,13 +72,13 @@ def replaceEscape(cad):
         Same as cad but without any possible escape characters.
     """
 
+    escape_ch = [("\/", "/"), ("\\\\", "\\"), (r"\'", "'"), (r'\"', '"'), ("\n", " "), ("\t", " ")]
 
-    patterns = [r"\\/", r"\'", r'\"', "\n", "\t", r"  +"]
-    replacements = [r"/", r"'", r'"', r" ", r" ", r" "]
-    # TODO remove the second escape character
+    for elem in escape_ch:
+        cad = cad.replace(elem[0], elem[1])
 
-    for pat, rep in itertools.izip(patterns, replacements):
-        re.sub(pat, rep, cad)
+    # Removing multiple whitespaces
+    re.sub(r"  +", " ", cad)
 
     return cad
 
@@ -103,7 +102,6 @@ def format_json_tweets(unprocessed_tweets):
     df : pandas.DataFrame
         df is a DataFrame that contains the content and timestamp of each tweet.
     """
-
 
     df = pd.DataFrame(json.loads(line) for line in unprocessed_tweets)
 
@@ -153,7 +151,6 @@ def clean(tweet_batch=None, batch_size=100):
     Note: it returns df only in non standalone mode, i.e. when clean is called by another function.
     """
 
-
     standalone_mode = True if tweet_batch is None else False
 
     if standalone_mode:
@@ -164,7 +161,8 @@ def clean(tweet_batch=None, batch_size=100):
             path_2_input = sys.argv[1]
             path_2_output = sys.argv[2]
         except IndexError:
-            print("The number of parameters given was insufficient. You need to provide at least 2: the input file and the output file")
+            print(
+            "The number of parameters given was insufficient. You need to provide at least 2: the input file and the output file")
 
         # Exists those files?
 
