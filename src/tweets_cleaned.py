@@ -107,6 +107,8 @@ def format_json_tweets(unprocessed_tweets):
 
     # Remove unwanted data
     df = df[['text', 'created_at']]
+    df = df[ pd.notnull(df['text']) ]
+    df = df[ pd.notnull(df['created_at']) ]
 
     # Remove unicode characters
     df['text'] = df['text'].apply(removeUnicode)
