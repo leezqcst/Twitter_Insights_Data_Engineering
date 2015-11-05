@@ -5,7 +5,6 @@ Created on Sat Oct 31 11:08:29 2015
 @author: Ricardo Guerrero Gómez-Olmedo
 """
 
-import itertools
 import json
 import os
 import pandas as pd
@@ -165,8 +164,7 @@ def clean(tweet_batch=None, batch_size=100):
             path_2_input = sys.argv[1]
             path_2_output = sys.argv[2]
         except IndexError:
-            print(
-            "The number of parameters given was insufficient. You need to provide at least 2: the input file and the output file")
+            print("The number of parameters given was insufficient. You need to provide at least 2: the input file and the output file")
 
         # Exists those files?
 
