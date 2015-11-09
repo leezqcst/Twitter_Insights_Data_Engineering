@@ -176,7 +176,7 @@ def computeDegree(batch_size=100):
                             windowed_tweets_df = df[ (df['timestamp'] >= oldest_valid_timestamp)  &  (df.index <= index) ]
 
                             # Extract hashtags
-                            windowed_tweets_df['hashtags'] = windowed_tweets_df['text'].apply(getHashtags)
+                            windowed_tweets_df.loc[begin:, 'hashtags'] = windowed_tweets_df.loc[begin:, 'text'].apply(getHashtags)
 
                             # We can only use those tweets that have at least 2 hashtags
                             length = lambda x: len(x)
@@ -191,7 +191,7 @@ def computeDegree(batch_size=100):
                                 nodes.sort()
 
                                 # Converting a list of hashtags (nodes) in a list of tuples (edges)
-                                valid_tweets_df['edges'] = valid_tweets_df['hashtags'].apply(getEdges)
+                                valid_tweets_df.loc[begin:, 'edges'] = valid_tweets_df.loc[begin:, 'hashtags'].apply(getEdges)
 
                                 # Because the same edges can appear in different tweets, we need to remove repeated edges
                                 flat_edges = [item for sublist in valid_tweets_df['edges'] for item in sublist]
