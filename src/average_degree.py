@@ -176,7 +176,10 @@ def computeDegree(batch_size=100):
                             windowed_tweets_df = df[ (df['timestamp'] >= oldest_valid_timestamp)  &  (df.index <= index) ]
 
                             # Extract hashtags
-                            windowed_tweets_df.loc[begin:, 'hashtags'] = windowed_tweets_df.loc[begin:, 'text'].apply(getHashtags)
+                            if index in windowed_tweets_df.index: # Some tweets were removed because of non allowed values, so we need to check this
+                                aux_hashtags = getHashtags(windowed_tweets_df.loc[index, 'text'])
+                                windowed_tweets_df.set_value(index, 'hashtags', aux_hashtags)
+                                df.set_value(index, 'hashtags', aux_hashtags) # Done in this way as a workaoround to SettingWithCopyWarning issue
 
                             # We can only use those tweets that have at least 2 hashtags
                             length = lambda x: len(x)
@@ -191,7 +194,10 @@ def computeDegree(batch_size=100):
                                 nodes.sort()
 
                                 # Converting a list of hashtags (nodes) in a list of tuples (edges)
-                                valid_tweets_df.loc[begin:, 'edges'] = valid_tweets_df.loc[begin:, 'hashtags'].apply(getEdges)
+                                if index in valid_tweets_df.index: # Maybe the row pointed by index had only one hashtag
+                                    aux_edges = getEdges(valid_tweets_df.loc[index, 'hashtags'])
+                                    valid_tweets_df.set_value(index, 'edges', aux_edges)
+                                    df.set_value(index, 'edges', aux_edges) # Done in this way as a workaoround to SettingWithCopyWarning issue
 
                                 # Because the same edges can appear in different tweets, we need to remove repeated edges
                                 flat_edges = [item for sublist in valid_tweets_df['edges'] for item in sublist]
